@@ -1,0 +1,6 @@
+prune test
+include LICENSE.txt
+include README.md
+include beetsplug/genres/about.py
+include beetsplug/genres/config_default.yml
+

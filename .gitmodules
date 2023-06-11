@@ -1,0 +1,6 @@
+[submodule "template"]
+	path = template
+	url = https://github.com/adamjakab/BeetsPluginTemplate
+[submodule "_template"]
+	path = _template
+	url = https://github.com/adamjakab/BeetsPluginTemplate
