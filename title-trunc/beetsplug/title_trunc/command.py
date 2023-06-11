@@ -4,11 +4,14 @@
 
 from optparse import OptionParser
 
-from beets.library import Library
+from beets.dbcore import AndQuery
+from beets.dbcore.query import NoneQuery
+from beets.library import Library, Item, parse_query_parts
 from beets.ui import Subcommand, decargs
 from confuse import Subview
 
 from beetsplug.title_trunc import common
+from beetsplug.title_trunc.length_query import MaxLengthQuery
 
 
 class TitleTruncCommand(Subcommand):
@@ -16,6 +19,9 @@ class TitleTruncCommand(Subcommand):
     lib: Library = None
     query = None
     parser: OptionParser = None
+
+    cfg_force = False
+    cfg_length = 50
 
     def __init__(self, cfg):
         self.config = cfg
@@ -29,6 +35,19 @@ class TitleTruncCommand(Subcommand):
             '-v', '--version',
             action='store_true', dest='version', default=False,
             help=u'show plugin version'
+        )
+
+        self.parser.add_option(
+            '-f', '--force',
+            action='store_true', dest='force', default=self.cfg_force,
+            help=u'force analysis of items with short title already set '
+        )
+
+        self.parser.add_option(
+            '-l', '--length',
+            type='int',
+            action='store', dest='max_len', default=self.cfg_length,
+            help=u'Set length to truncate title'
         )
 
         super(TitleTruncCommand, self).__init__(
@@ -47,10 +66,49 @@ class TitleTruncCommand(Subcommand):
             self.show_version_information()
             return
 
+        self.cfg_length = options.max_len
         self.handle_main_task()
 
     def handle_main_task(self):
-        self._say("Your journey starts here...", log_only=False)
+        items = self.retrieve_library_items()
+        if not items:
+            "No items selected to process"
+            return
+
+        for item in items:
+            self.process_item(item)
+            item.try_write()
+            item.store()
+
+    def retrieve_library_items(self):
+        cmd_query = self.query
+        parsed_cmd_query, parsed_ordering = parse_query_parts(cmd_query, Item)
+        len_query = MaxLengthQuery('title', str(self.cfg_length))
+
+        if self.cfg_force:
+            full_query = AndQuery([parsed_cmd_query, len_query])
+        else:
+            full_query = AndQuery([parsed_cmd_query, len_query, NoneQuery('title_short')])
+
+        return self.lib.items(full_query, parsed_ordering)
+
+    def process_item(self, item: Item):
+        title = item.get("title")
+        title_short = item.get("title_short")
+
+        # Generate options
+        # - Truncate with ""
+        # - Collapse middle
+        # - Remove before/after :
+        # - Remove in ( )
+        # - Remove after : except in ( )
+        # - Existing short title (if present)
+
+        # User selects option
+
+        # Set attribute on output
+        # Writing handled in [main]
+        return self.cfg_length
 
     def show_version_information(self):
         self._say("{pt}({pn}) plugin for Beets: v{ver}".format(

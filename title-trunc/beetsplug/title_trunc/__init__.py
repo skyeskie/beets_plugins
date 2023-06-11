@@ -4,6 +4,7 @@
 
 import os
 
+from beets.dbcore import types
 from beets.plugins import BeetsPlugin
 from confuse import ConfigSource, load_yaml
 
@@ -12,6 +13,8 @@ from beetsplug.title_trunc.command import TitleTruncCommand
 
 class TitleTruncPlugin(BeetsPlugin):
     _default_plugin_config_file_name_ = 'config_default.yml'
+
+    item_types = {'title_short': types.STRING}
 
     def __init__(self):
         super(TitleTruncPlugin, self).__init__()
