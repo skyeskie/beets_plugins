@@ -4,7 +4,7 @@
 
 import unittest
 
-from beetsplug.title_trunc.command import select_from_options
+from beetsplug.title_trunc.select_trunc import select_from_options
 
 
 class MyTestCase(unittest.TestCase):
