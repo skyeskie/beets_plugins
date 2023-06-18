@@ -26,11 +26,11 @@ from beets.util import (
     bytestring_path,
     displayable_path,
 )
-from beets.util.confit import Subview, Dumper
-from beetsplug.template import common
+from confuse import Subview, Dumper
 from six import StringIO
 
-from beetsplug import template
+from beetsplug import title_trunc
+from beetsplug.title_trunc import common
 
 logging.getLogger('beets').propagate = True
 
@@ -82,8 +82,8 @@ def capture_stdout(suppress_output=True):
         yield sys.stdout
     finally:
         sys.stdout = org
-        # if not suppress_output:
-        print(capture.getvalue())
+        if not suppress_output:
+            print(capture.getvalue())
 
 
 @contextmanager
@@ -136,7 +136,7 @@ class TestHelper(TestCase, Assertions):
 
     def reset_beets(self, config_file: bytes):
         self.teardown_beets()
-        plugins._classes = {template.TemplatePlugin}
+        plugins._classes = {title_trunc.TitleTruncPlugin}
         self._setup_beets(config_file)
 
     def _setup_beets(self, config_file: bytes):

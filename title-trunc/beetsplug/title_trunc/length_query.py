@@ -5,7 +5,7 @@
 from beets.dbcore.query import NumericQuery
 
 
-class MaxLengthQuery(NumericQuery):
+class OverMaxLengthQuery(NumericQuery):
     def __init__(self, field, pattern, fast=True):
         super().__init__(field, pattern, fast)
         self.maxlen = self._convert(pattern)
@@ -17,4 +17,5 @@ class MaxLengthQuery(NumericQuery):
         return len(value) <= self.maxlen
 
     def col_clause(self):
-        return f'len({self.field}) <= ?', (self.maxlen,)
+        # SQLite length() function
+        return f'length({self.field}) > ?', (self.maxlen,)

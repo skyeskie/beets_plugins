@@ -14,7 +14,7 @@ from beetsplug.title_trunc.command import TitleTruncCommand
 class TitleTruncPlugin(BeetsPlugin):
     _default_plugin_config_file_name_ = 'config_default.yml'
 
-    item_types = {'title_short': types.STRING}
+    item_types = {'title_trunc': types.STRING}
 
     def __init__(self):
         super(TitleTruncPlugin, self).__init__()
