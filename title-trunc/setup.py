@@ -39,6 +39,8 @@ setup(
 
     install_requires=[
         'beets>=1.4.9',
+        'confuse',
+        'beaupy>=3.5.4'
     ],
 
     tests_require=[

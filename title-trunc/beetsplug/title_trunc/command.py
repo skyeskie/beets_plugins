@@ -3,15 +3,14 @@
 #  License: See LICENSE.txt
 from optparse import OptionParser
 
-from beets.dbcore import AndQuery
-from beets.dbcore.query import NoneQuery
+from beets.dbcore.query import AndQuery
 from beets.library import Library, Item, parse_query_parts
 from beets.ui import Subcommand, decargs
 from confuse import Subview
 
 from beetsplug.title_trunc import common
 from beetsplug.title_trunc.length_query import OverMaxLengthQuery
-from beetsplug.title_trunc.select_trunc import select_from_options
+from beetsplug.title_trunc.select_trunc import SelectTrunc
 
 
 class TitleTruncCommand(Subcommand):
@@ -21,7 +20,7 @@ class TitleTruncCommand(Subcommand):
     parser: OptionParser = None
 
     cfg_force = False
-    cfg_length = 50
+    cfg_length = 75
 
     def __init__(self, cfg):
         self.config = cfg
@@ -89,38 +88,38 @@ class TitleTruncCommand(Subcommand):
             return
         print('Processing items')
         for item in items:
-            title = item.get('title')
-            self.process_item(item)
-            # item.try_write()
-            # item.store()
+            if item.get('title_short') is None or self.cfg_force:
+                self.process_item(item)
+            else:
+                print(item.get('title_short'))
 
-    def retrieve_library_items(self):
+    def retrieve_library_items(self) -> list[Item]:
         print("RETRIEVE")
         cmd_query = self.query
         parsed_cmd_query, parsed_ordering = parse_query_parts(cmd_query, Item)
         len_query = OverMaxLengthQuery('title', str(self.cfg_length))
 
-        if self.cfg_force:
-            full_query = AndQuery([parsed_cmd_query, len_query])
-        else:
-            full_query = AndQuery([parsed_cmd_query, len_query, NoneQuery('title_short')])
-        print(full_query)
+        full_query = AndQuery([parsed_cmd_query, len_query])
+        # TODO: Work in non-force filtering earlier if possible
         return self.lib.items(full_query, parsed_ordering)
 
     def process_item(self, item: Item):
         title: str = item.get("title")
-        title_short: str = item.get("title_trunc")
+        title_short: str | None = item.get('title_short', default=None)
         if len(title) <= self.cfg_length:
             return
         if not self.cfg_force and (title_short and len(title_short) <= self.cfg_length):
             return
 
-        sel = select_from_options(
-            title,
-            title_short, self.cfg_length
+        selector = SelectTrunc(
+            item=item,
+            library=self.lib,
+            length=self.cfg_length,
         )
-        if sel is not None:
-            item.set_parse('title_trunc', sel)
+        short_title = selector.get_short_title()
+        if short_title is not None:
+            item.update({'title_short': short_title})
+            item.store()  # TODO: Dry-run no-store?
 
     def show_version_information(self):
         self._say("{pt}({pn}) plugin for Beets: v{ver}".format(
